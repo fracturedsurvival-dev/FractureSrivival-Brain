@@ -1,0 +1,71 @@
+"use client";
+
+import React, { useEffect, useState } from 'react';
+
+export default function SystemStatusPanel() {
+  const [uptime, setUptime] = useState(0);
+  const [memoryLoad, setMemoryLoad] = useState(42);
+  const [networkStatus, setNetworkStatus] = useState("CONNECTED");
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setUptime(u => u + 1);
+      setMemoryLoad(prev => {
+        const change = Math.random() * 10 - 5;
+        return Math.min(99, Math.max(10, prev + change));
+      });
+      
+      if (Math.random() > 0.98) {
+        setNetworkStatus("REROUTING...");
+        setTimeout(() => setNetworkStatus("CONNECTED"), 1000);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatTime = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="border-terminal p-4 bg-terminal-dim mb-6 font-mono text-sm">
+      <div className="flex justify-between items-center border-b border-green-900 pb-2 mb-2">
+        <h2 className="text-glow font-bold uppercase">System Status // OVERWATCH_V2</h2>
+        <span className="animate-pulse">● LIVE</span>
+      </div>
+      
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div>
+          <div className="text-xs text-green-700">UPTIME</div>
+          <div className="text-lg">{formatTime(uptime)}</div>
+        </div>
+        
+        <div>
+          <div className="text-xs text-green-700">MEMORY_INTEGRITY</div>
+          <div className="w-full bg-green-900 h-4 mt-1 border border-green-800">
+            <div 
+              className="bg-green-500 h-full transition-all duration-500" 
+              style={{ width: `${memoryLoad}%` }}
+            />
+          </div>
+          <div className="text-right text-xs mt-1">{memoryLoad.toFixed(1)}%</div>
+        </div>
+
+        <div>
+          <div className="text-xs text-green-700">NETWORK_LAYER</div>
+          <div className={`text-lg ${networkStatus !== "CONNECTED" ? "text-yellow-500" : ""}`}>
+            {networkStatus}
+          </div>
+        </div>
+
+        <div>
+          <div className="text-xs text-green-700">THREAT_LEVEL</div>
+          <div className="text-lg text-red-500 animate-pulse">ELEVATED</div>
+        </div>
+      </div>
+    </div>
+  );
+}

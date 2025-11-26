@@ -1,0 +1,152 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model TextBlob {
+  id           String   @id @default(cuid())
+  category     String
+  slug         String   @unique
+  content      String
+  last_updated DateTime @updatedAt
+
+  @@map("text_blobs")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  type      String
+  details   String
+  timestamp DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+model NPC {
+  id        String        @id @default(cuid())
+  name      String        @unique
+  faction   String?
+  alignment String?
+  health    Int           @default(100)
+  status    String        @default("ALIVE") // ALIVE, INJURED, DEAD
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  memories  MemoryEvent[]
+  trustSources TrustState[] @relation("sourceRefs")
+  trustTargets TrustState[] @relation("targetRefs")
+  trustEventsSource TrustEvent[] @relation("trustSourceEvents")
+  trustEventsTarget TrustEvent[] @relation("trustTargetEvents")
+  
+  // New Faction Relation (optional for now to ease migration)
+  factionId String?
+  factionRef Faction? @relation(fields: [factionId], references: [id])
+  
+  // Web3 Integration
+  wallet    Wallet?
+
+  // User Integration
+  userId    String?  @unique
+  user      User?    @relation(fields: [userId], references: [id])
+
+  // AI / Growth Fields
+  skills    Json?    @default("{}")
+  habits    Json?    @default("[]")
+  
+  // Task System
+  currentAction    String?
+  actionExpiresAt  DateTime?
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  npc       NPC?
+}
+
+model Wallet {
+  id        String   @id @default(cuid())
+  address   String   @unique
+  balance   Float    @default(100.0)
+  ownerId   String?  @unique
+  owner     NPC?     @relation(fields: [ownerId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Transaction {
+  id        String   @id @default(cuid())
+  hash      String   @unique
+  from      String
+  to        String
+  amount    Float
+  timestamp DateTime @default(now())
+}
+
+model Faction {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String
+  goals       String?  @default("Survive and expand influence.")
+  resources   Int      @default(100)
+  members     NPC[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model WorldEvent {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  type        String
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TrustState {
+  id         String   @id @default(cuid())
+  sourceId   String
+  targetId   String
+  source     NPC      @relation("sourceRefs", fields: [sourceId], references: [id])
+  target     NPC      @relation("targetRefs", fields: [targetId], references: [id])
+  trustLevel Int      @default(0)
+  updatedAt  DateTime @updatedAt
+
+  @@unique([sourceId, targetId])
+}
+
+model MemoryEvent {
+  id        String   @id @default(cuid())
+  npcId     String
+  npc       NPC      @relation(fields: [npcId], references: [id])
+  rawContent String
+  summary   String?
+  importance Int      @default(1)
+  tags      String?
+  createdAt DateTime @default(now())
+}
+
+model TrustEvent {
+  id           String   @id @default(cuid())
+  sourceId     String
+  targetId     String
+  source       NPC      @relation("trustSourceEvents", fields: [sourceId], references: [id])
+  target       NPC      @relation("trustTargetEvents", fields: [targetId], references: [id])
+  delta        Int
+  resultingTrust Int
+  eventType    String?
+  createdAt    DateTime @default(now())
+}

@@ -1,26 +1,88 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #050505;
+  --foreground: #00ff41;
+  --terminal-dim: #003b00;
+  --terminal-bright: #ccffcc;
+  --scanline-color: rgba(0, 255, 65, 0.04);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: "Courier New", Courier, monospace;
+  --font-mono: "Courier New", Courier, monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Courier New", Courier, monospace;
+  overflow-x: hidden;
+  min-height: 100vh;
+  text-shadow: 0 0 2px var(--terminal-dim);
+}
+
+/* CRT Scanline Effect */
+.scanlines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(
+    to bottom,
+    var(--scanline-color) 50%,
+    rgba(0, 0, 0, 0) 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 9999;
+  animation: scanline-scroll 0.5s linear infinite;
+}
+
+/* CRT Flicker */
+.crt-flicker {
+  animation: flicker 0.15s infinite;
+  opacity: 0.95;
+}
+
+@keyframes scanline-scroll {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 4px; }
+}
+
+@keyframes flicker {
+  0% { opacity: 0.97; }
+  50% { opacity: 1; }
+  100% { opacity: 0.98; }
+}
+
+/* Glitch Utilities */
+.text-glow {
+  text-shadow: 0 0 5px var(--foreground);
+}
+
+.border-terminal {
+  border: 1px solid var(--foreground);
+  box-shadow: 0 0 5px var(--terminal-dim);
+}
+
+.bg-terminal-dim {
+  background-color: rgba(0, 59, 0, 0.2);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #000;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--terminal-dim);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--foreground);
 }
