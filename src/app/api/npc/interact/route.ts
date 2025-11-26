@@ -1,6 +1,7 @@
 import { simulateInteraction } from '@/lib/services/brainAgent';
 import { z } from 'zod';
 import { handleApiError, successResponse } from '@/lib/api';
+import { OracleProvider } from '@/lib/services/oracle';
 
 const interactSchema = z.object({
   sourceId: z.string().cuid(),
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
     const validation = interactSchema.parse(body); // Use parse to throw ZodError automatically
 
     const { sourceId, targetId, content, eventType, model } = validation;
-    const result = await simulateInteraction(sourceId, targetId, content, eventType, model);
+    const result = await simulateInteraction(sourceId, targetId, content, eventType, model as OracleProvider | undefined);
     return successResponse(result);
   } catch (e) {
     return handleApiError(e);
