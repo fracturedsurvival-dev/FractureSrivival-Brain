@@ -1,19 +1,27 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { z } from 'zod';
+import { handleApiError, successResponse, errorResponse } from '@/lib/api';
+
+const transferSchema = z.object({
+  fromAddress: z.string().min(10),
+  toAddress: z.string().min(10),
+  amount: z.number().positive()
+});
 
 export async function POST(req: Request) {
   try {
-    const { fromAddress, toAddress, amount } = await req.json();
+    const body = await req.json();
+    const { fromAddress, toAddress, amount } = transferSchema.parse(body);
     
     const sender = await prisma.wallet.findUnique({ where: { address: fromAddress } });
     const receiver = await prisma.wallet.findUnique({ where: { address: toAddress } });
 
     if (!sender || !receiver) {
-      return NextResponse.json({ error: 'Wallet not found' }, { status: 404 });
+      return errorResponse('Wallet not found', 404);
     }
 
     if (sender.balance < amount) {
-      return NextResponse.json({ error: 'Insufficient funds' }, { status: 400 });
+      return errorResponse('Insufficient funds', 400);
     }
 
     // Transaction
@@ -36,13 +44,12 @@ export async function POST(req: Request) {
       })
     ]);
 
-    return NextResponse.json({ 
-      success: true, 
+    return successResponse({ 
       txHash: tx.hash, 
       newBalance: updatedSender.balance 
     });
 
   } catch (e) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    return handleApiError(e);
   }
 }

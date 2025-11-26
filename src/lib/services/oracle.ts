@@ -1,6 +1,4 @@
-import 'dotenv/config';
-
-export type OracleProvider = 'gpt-5' | 'claude-sonnet-4.5';
+export type OracleProvider = 'gpt-5' | 'claude-sonnet-4.5' | 'gpt-4o';
 
 interface OracleResponse {
   summary: string;
@@ -24,7 +22,7 @@ export interface MemoryAnalysis {
 export async function analyzeMemory(content: string, model?: OracleProvider): Promise<MemoryAnalysis> {
   const selected = model || (process.env.ORACLE_MODEL as OracleProvider);
 
-  if (selected === 'gpt-5' && process.env.OPENAI_API_KEY) {
+  if ((selected === 'gpt-5' || selected === 'gpt-4o') && process.env.OPENAI_API_KEY) {
     try {
       const res = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -70,7 +68,7 @@ export async function summarize(content: string, model?: OracleProvider): Promis
   }
 
   // OpenAI Implementation
-  if (selected === 'gpt-5' && process.env.OPENAI_API_KEY) {
+  if ((selected === 'gpt-5' || selected === 'gpt-4o') && process.env.OPENAI_API_KEY) {
     try {
       const res = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -108,7 +106,7 @@ export async function summarize(content: string, model?: OracleProvider): Promis
 export async function chat(query: string, model?: OracleProvider): Promise<string> {
   const selected = model || (process.env.ORACLE_MODEL as OracleProvider);
 
-  if (selected === 'gpt-5' && process.env.OPENAI_API_KEY) {
+  if ((selected === 'gpt-5' || selected === 'gpt-4o') && process.env.OPENAI_API_KEY) {
     try {
       const res = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',

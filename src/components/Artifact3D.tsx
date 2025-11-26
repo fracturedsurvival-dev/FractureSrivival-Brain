@@ -5,7 +5,7 @@ import React from 'react';
 export default function Artifact3D() {
   return (
     <div className="relative w-full h-48 flex items-center justify-center overflow-hidden border-terminal bg-black/50 mb-6">
-      <div className="absolute top-2 left-2 text-xs text-green-700">ARTIFACT_ANALYSIS // UNKNOWN_ORIGIN</div>
+      <div className="absolute top-2 left-2 text-xs text-cyan-700">ARTIFACT_ANALYSIS // UNKNOWN_ORIGIN</div>
       
       {/* CSS 3D Cube Animation */}
       <div className="cube-container">
@@ -36,9 +36,9 @@ export default function Artifact3D() {
           position: absolute;
           width: 100px;
           height: 100px;
-          border: 1px solid #00ff41;
-          background: rgba(0, 255, 65, 0.1);
-          box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
+          border: 1px solid #06b6d4;
+          background: rgba(6, 182, 212, 0.1);
+          box-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
         }
         .front  { transform: rotateY(0deg) translateZ(50px); }
         .back   { transform: rotateY(180deg) translateZ(50px); }

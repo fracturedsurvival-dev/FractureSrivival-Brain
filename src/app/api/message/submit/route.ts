@@ -1,21 +1,26 @@
-import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { checkSafety } from '@/lib/services/safety';
+import { z } from 'zod';
+import { handleApiError, successResponse, errorResponse } from '@/lib/api';
+
+const messageSchema = z.object({
+  npcId: z.string().cuid(),
+  text: z.string().min(1).max(2000)
+});
 
 export async function POST(req: Request) {
   try {
-    const { npcId, text } = await req.json();
-    if (!npcId || !text) {
-      return NextResponse.json({ error: 'INVALID_INPUT' }, { status: 400 });
-    }
+    const body = await req.json();
+    const { npcId, text } = messageSchema.parse(body);
+
     const safety = checkSafety(text);
     if (safety.status === 'FLAGGED') {
       await prisma.auditLog.create({ data: { type: 'SAFETY_FLAG', details: JSON.stringify({ npcId, reason: safety.reason }) } });
-      return NextResponse.json({ status: 'REJECTED', reason: safety.reason }, { status: 400 });
+      return errorResponse(safety.reason || 'Safety check failed', 400, { status: 'REJECTED' });
     }
     await prisma.auditLog.create({ data: { type: 'MESSAGE_OK', details: JSON.stringify({ npcId }) } });
-    return NextResponse.json({ status: 'ACCEPTED' }, { status: 201 });
+    return successResponse({ status: 'ACCEPTED' }, 201);
   } catch (e) {
-    return NextResponse.json({ error: 'SERVER_ERROR', message: (e as Error).message }, { status: 500 });
+    return handleApiError(e);
   }
 }

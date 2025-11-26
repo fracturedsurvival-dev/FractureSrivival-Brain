@@ -1,16 +1,50 @@
 import prisma from '@/lib/db';
 
 export async function executeAttack(attackerId: string, defenderId: string) {
-  const attacker = await prisma.nPC.findUnique({ where: { id: attackerId } });
-  const defender = await prisma.nPC.findUnique({ where: { id: defenderId } });
+  const attacker = await prisma.nPC.findUnique({ 
+    where: { id: attackerId },
+    include: { inventory: { where: { equipped: true }, include: { item: true } } }
+  });
+  const defender = await prisma.nPC.findUnique({ 
+    where: { id: defenderId },
+    include: { inventory: { where: { equipped: true }, include: { item: true } } }
+  });
 
   if (!attacker || !defender) throw new Error("INVALID_COMBATANTS");
   if (defender.status === 'DEAD') throw new Error("TARGET_ALREADY_DEAD");
 
-  // Simple damage logic (can be expanded with items/stats later)
-  const baseDamage = Math.floor(Math.random() * 20) + 5; // 5-25 damage
-  const crit = Math.random() > 0.8;
-  const damage = crit ? baseDamage * 2 : baseDamage;
+  // Calculate Attacker Stats
+  let attackPower = 5; // Base unarmed damage
+  let weaponName = "Fists";
+  
+  const weapon = attacker.inventory.find(i => i.item.type === 'WEAPON');
+  if (weapon) {
+    const stats = weapon.item.stats as { damage?: number };
+    if (stats?.damage) attackPower = stats.damage;
+    weaponName = weapon.item.name;
+  }
+
+  // Calculate Defender Stats
+  let defense = 0;
+  let armorName = "None";
+
+  const armor = defender.inventory.find(i => i.item.type === 'ARMOR');
+  if (armor) {
+    const stats = armor.item.stats as { defense?: number };
+    if (stats?.defense) defense = stats.defense;
+    armorName = armor.item.name;
+  }
+
+  // Damage Formula
+  // Roll between 50% and 100% of attack power
+  const roll = (Math.random() * 0.5) + 0.5;
+  const rawDamage = Math.floor(attackPower * roll);
+  
+  // Defense reduces damage flatly, but always at least 1 damage
+  const mitigatedDamage = Math.max(1, rawDamage - defense);
+  
+  const crit = Math.random() > 0.9; // 10% crit chance
+  const damage = Math.floor(crit ? mitigatedDamage * 1.5 : mitigatedDamage);
 
   const newHealth = Math.max(0, defender.health - damage);
   const newStatus = newHealth === 0 ? 'DEAD' : (newHealth < 30 ? 'INJURED' : 'ALIVE');
@@ -25,8 +59,8 @@ export async function executeAttack(attackerId: string, defenderId: string) {
   });
 
   // Create Memories
-  const attackDesc = `Attacked ${defender.name} dealing ${damage} damage.${crit ? ' (CRITICAL HIT)' : ''}`;
-  const defendDesc = `Attacked by ${attacker.name} taking ${damage} damage.${newStatus === 'DEAD' ? ' I have fallen.' : ''}`;
+  const attackDesc = `Attacked ${defender.name} with ${weaponName} dealing ${damage} damage.${crit ? ' (CRITICAL HIT)' : ''}`;
+  const defendDesc = `Attacked by ${attacker.name} (${weaponName}) taking ${damage} damage.${defense > 0 ? ` My ${armorName} absorbed some impact.` : ''}${newStatus === 'DEAD' ? ' I have fallen.' : ''}`;
 
   await prisma.memoryEvent.create({
     data: {

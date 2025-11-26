@@ -26,24 +26,24 @@ export default function NPCTrustPanel({ sourceId }: { sourceId: string | null })
     return () => { mounted = false; };
   }, [sourceId]);
 
-  if (!sourceId) return <div className="text-xs text-green-800">AWAITING_TARGET_SELECTION...</div>;
-  if (loading) return <div className="text-xs text-green-700 animate-pulse">CALCULATING_TRUST_VECTORS...</div>;
+  if (!sourceId) return <div className="text-xs text-cyan-800">AWAITING_TARGET_SELECTION...</div>;
+  if (loading) return <div className="text-xs text-cyan-700 animate-pulse">CALCULATING_TRUST_VECTORS...</div>;
 
   return (
     <div className="font-mono text-xs">
-      {states.length === 0 && <div className="text-green-800">NO_TRUST_DATA_AVAILABLE</div>}
+      {states.length === 0 && <div className="text-cyan-800">NO_TRUST_DATA_AVAILABLE</div>}
       <ul className="space-y-2">
         {states.map(s => (
-          <li key={s.id} className="flex items-center justify-between border-b border-green-900/30 pb-1">
-            <span className="text-green-500">{s.targetId}</span>
+          <li key={s.id} className="flex items-center justify-between border-b border-cyan-900/30 pb-1">
+            <span className="text-cyan-500">{s.targetId}</span>
             <div className="flex items-center gap-2">
-              <div className="w-24 h-2 bg-green-900/30 border border-green-900">
+              <div className="w-24 h-2 bg-cyan-900/30 border border-cyan-900">
                 <div 
-                  className={`h-full ${s.trustLevel < 0 ? 'bg-red-500' : 'bg-green-500'}`} 
+                  className={`h-full ${s.trustLevel < 0 ? 'bg-red-500' : 'bg-cyan-500'}`} 
                   style={{ width: `${Math.min(100, Math.abs(s.trustLevel))}%` }}
                 />
               </div>
-              <span className={s.trustLevel < 0 ? 'text-red-500' : 'text-green-400'}>{s.trustLevel}</span>
+              <span className={s.trustLevel < 0 ? 'text-red-500' : 'text-cyan-400'}>{s.trustLevel}</span>
             </div>
           </li>
         ))}

@@ -1,17 +1,20 @@
-import { NextResponse } from 'next/server';
 import { executeAttack } from '@/lib/services/combatSystem';
+import { z } from 'zod';
+import { handleApiError, successResponse } from '@/lib/api';
+
+const attackSchema = z.object({
+  attackerId: z.string().cuid(),
+  defenderId: z.string().cuid()
+});
 
 export async function POST(req: Request) {
   try {
-    const { attackerId, defenderId } = await req.json();
-    
-    if (!attackerId || !defenderId) {
-      return NextResponse.json({ error: 'MISSING_COMBATANTS' }, { status: 400 });
-    }
+    const body = await req.json();
+    const { attackerId, defenderId } = attackSchema.parse(body);
 
     const result = await executeAttack(attackerId, defenderId);
-    return NextResponse.json(result);
+    return successResponse(result);
   } catch (e) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 400 });
+    return handleApiError(e);
   }
 }

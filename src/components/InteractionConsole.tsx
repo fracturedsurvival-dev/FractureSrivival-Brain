@@ -37,25 +37,25 @@ export default function InteractionConsole() {
 
   return (
     <div className="space-y-4 font-mono text-sm">
-      <h2 className="font-bold text-lg text-glow border-b border-green-900 pb-2">INTERACTION_CONSOLE</h2>
+      <h2 className="font-bold text-lg text-glow border-b border-cyan-900 pb-2 text-cyan-400">INTERACTION_CONSOLE</h2>
       
       <div className="grid gap-4">
         {/* Source Selection */}
-        <div className="border border-green-900 p-3 bg-black/30">
-          <h3 className="text-green-400 mb-2 uppercase">1. Source Configuration</h3>
+        <div className="border border-cyan-900 p-3 bg-black/30">
+          <h3 className="text-cyan-400 mb-2 uppercase">1. Source Configuration</h3>
           <NPCList onSelect={setSourceNpc} />
-          {sourceNpc && <div className="text-xs text-green-300 mt-2">{'>'}{'>'} LOCKED: {sourceNpc.name}</div>}
+          {sourceNpc && <div className="text-xs text-cyan-300 mt-2">{'>'}{'>'} LOCKED: {sourceNpc.name}</div>}
         </div>
 
         {/* Interaction Parameters */}
-        <div className="border border-green-900 p-3 bg-black/30 space-y-3">
-           <h3 className="text-green-400 mb-2 uppercase">2. Vector Parameters</h3>
+        <div className="border border-cyan-900 p-3 bg-black/30 space-y-3">
+           <h3 className="text-cyan-400 mb-2 uppercase">2. Vector Parameters</h3>
            
            <div className="grid grid-cols-2 gap-2">
              <label className="block">
-               <span className="text-xs text-green-700">TARGET_ID</span>
+               <span className="text-xs text-cyan-700">TARGET_ID</span>
                <input 
-                 className="w-full bg-black border border-green-800 text-green-500 px-2 py-1 focus:border-green-500 outline-none" 
+                 className="w-full bg-black border border-cyan-800 text-cyan-500 px-2 py-1 focus:border-cyan-500 outline-none" 
                  value={targetId} 
                  onChange={e => setTargetId(e.target.value)} 
                  placeholder="npc_vera" 
@@ -63,9 +63,9 @@ export default function InteractionConsole() {
              </label>
              
              <label className="block">
-               <span className="text-xs text-green-700">PROTOCOL</span>
+               <span className="text-xs text-cyan-700">PROTOCOL</span>
                <select 
-                 className="w-full bg-black border border-green-800 text-green-500 px-2 py-1 focus:border-green-500 outline-none"
+                 className="w-full bg-black border border-cyan-800 text-cyan-500 px-2 py-1 focus:border-cyan-500 outline-none"
                  value={eventType} 
                  onChange={e => setEventType(e.target.value)}
                >
@@ -77,9 +77,9 @@ export default function InteractionConsole() {
            </div>
 
            <label className="block">
-             <span className="text-xs text-green-700">LLM_MODEL</span>
+             <span className="text-xs text-cyan-700">LLM_MODEL</span>
              <select 
-               className="w-full bg-black border border-green-800 text-green-500 px-2 py-1 focus:border-green-500 outline-none"
+               className="w-full bg-black border border-cyan-800 text-cyan-500 px-2 py-1 focus:border-cyan-500 outline-none"
                value={model} 
                onChange={e => setModel(e.target.value)}
              >
@@ -88,9 +88,9 @@ export default function InteractionConsole() {
            </label>
 
            <label className="block">
-             <span className="text-xs text-green-700">PAYLOAD</span>
+             <span className="text-xs text-cyan-700">PAYLOAD</span>
              <textarea 
-               className="w-full bg-black border border-green-800 text-green-500 px-2 py-1 focus:border-green-500 outline-none"
+               className="w-full bg-black border border-cyan-800 text-cyan-500 px-2 py-1 focus:border-cyan-500 outline-none"
                rows={3} 
                value={content} 
                onChange={e => setContent(e.target.value)} 
@@ -101,7 +101,7 @@ export default function InteractionConsole() {
            <button 
              disabled={loading || !sourceNpc || !targetId || !content} 
              onClick={() => post('/api/npc/interact', { sourceId: sourceNpc.id, targetId, content, eventType, model })} 
-             className="w-full border border-green-600 text-green-500 hover:bg-green-900/30 px-3 py-2 uppercase text-xs tracking-widest disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+             className="w-full border border-cyan-600 text-cyan-500 hover:bg-cyan-900/30 px-3 py-2 uppercase text-xs tracking-widest disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
            >
              Execute Interaction
            </button>
@@ -116,25 +116,25 @@ export default function InteractionConsole() {
         </div>
 
         {/* Memory & Trust */}
-        <div className="border border-green-900 p-3 bg-black/30 space-y-3">
-          <h3 className="text-green-400 mb-2 uppercase">3. Memory & Trust Injection</h3>
+        <div className="border border-cyan-900 p-3 bg-black/30 space-y-3">
+          <h3 className="text-cyan-400 mb-2 uppercase">3. Memory & Trust Injection</h3>
           
           <div className="space-y-2">
-            <label className="block text-xs text-green-700">MEMORY_CONTENT</label>
+            <label className="block text-xs text-cyan-700">MEMORY_CONTENT</label>
             <textarea 
-              className="w-full bg-black border border-green-800 text-green-500 px-2 py-1 focus:border-green-500 outline-none"
+              className="w-full bg-black border border-cyan-800 text-cyan-500 px-2 py-1 focus:border-cyan-500 outline-none"
               rows={2} 
               value={memoryText} 
               onChange={e => setMemoryText(e.target.value)} 
             />
             <div className="flex gap-2">
               <input 
-                className="w-1/2 bg-black border border-green-800 text-green-500 px-2 py-1 text-xs" 
+                className="w-1/2 bg-black border border-cyan-800 text-cyan-500 px-2 py-1 text-xs" 
                 placeholder="Tags (comma sep)" 
                 id="memTags" 
               />
               <input 
-                className="w-1/2 bg-black border border-green-800 text-green-500 px-2 py-1 text-xs" 
+                className="w-1/2 bg-black border border-cyan-800 text-cyan-500 px-2 py-1 text-xs" 
                 type="number" 
                 min="1" 
                 max="10" 
@@ -157,10 +157,10 @@ export default function InteractionConsole() {
             </button>
           </div>
 
-          <div className="border-t border-green-900 pt-2 space-y-2">
-             <label className="block text-xs text-green-700">TRUST_MODIFIER</label>
+          <div className="border-t border-cyan-900 pt-2 space-y-2">
+             <label className="block text-xs text-cyan-700">TRUST_MODIFIER</label>
              <select 
-               className="w-full bg-black border border-green-800 text-green-500 px-2 py-1 focus:border-green-500 outline-none"
+               className="w-full bg-black border border-cyan-800 text-cyan-500 px-2 py-1 focus:border-cyan-500 outline-none"
                value={trustEventType} 
                onChange={e => setTrustEventType(e.target.value)}
              >
@@ -171,7 +171,7 @@ export default function InteractionConsole() {
              <button 
                disabled={loading || !sourceNpc || !targetId} 
                onClick={() => post('/api/trust/update', { sourceId: sourceNpc.id, targetId, eventType: trustEventType })} 
-               className="w-full border border-green-600 text-green-500 hover:bg-green-900/20 px-2 py-1 text-xs uppercase"
+               className="w-full border border-cyan-600 text-cyan-500 hover:bg-cyan-900/20 px-2 py-1 text-xs uppercase"
              >
                Update Trust Matrix
              </button>
@@ -179,14 +179,14 @@ export default function InteractionConsole() {
         </div>
 
         {/* World & Factions */}
-        <div className="border border-green-900 p-3 bg-black/30 space-y-3">
-          <h3 className="text-green-400 mb-2 uppercase">4. World State Manipulation</h3>
+        <div className="border border-cyan-900 p-3 bg-black/30 space-y-3">
+          <h3 className="text-cyan-400 mb-2 uppercase">4. World State Manipulation</h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <h4 className="text-xs text-green-700 uppercase">Trigger Event</h4>
-              <input className="w-full bg-black border border-green-800 text-green-500 px-2 py-1 text-xs" placeholder="Event Title" id="evtTitle" />
-              <input className="w-full bg-black border border-green-800 text-green-500 px-2 py-1 text-xs" placeholder="Description" id="evtDesc" />
-              <select className="w-full bg-black border border-green-800 text-green-500 px-2 py-1 text-xs" id="evtType">
+              <h4 className="text-xs text-cyan-700 uppercase">Trigger Event</h4>
+              <input className="w-full bg-black border border-cyan-800 text-cyan-500 px-2 py-1 text-xs" placeholder="Event Title" id="evtTitle" />
+              <input className="w-full bg-black border border-cyan-800 text-cyan-500 px-2 py-1 text-xs" placeholder="Description" id="evtDesc" />
+              <select className="w-full bg-black border border-cyan-800 text-cyan-500 px-2 py-1 text-xs" id="evtType">
                 <option>WEATHER</option>
                 <option>POLITICAL</option>
                 <option>INVASION</option>
@@ -208,9 +208,9 @@ export default function InteractionConsole() {
               </button>
             </div>
             <div className="space-y-2">
-              <h4 className="text-xs text-green-700 uppercase">Create Faction</h4>
-              <input className="w-full bg-black border border-green-800 text-green-500 px-2 py-1 text-xs" placeholder="Faction Name" id="facName" />
-              <input className="w-full bg-black border border-green-800 text-green-500 px-2 py-1 text-xs" placeholder="Description" id="facDesc" />
+              <h4 className="text-xs text-cyan-700 uppercase">Create Faction</h4>
+              <input className="w-full bg-black border border-cyan-800 text-cyan-500 px-2 py-1 text-xs" placeholder="Faction Name" id="facName" />
+              <input className="w-full bg-black border border-cyan-800 text-cyan-500 px-2 py-1 text-xs" placeholder="Description" id="facDesc" />
               <button 
                 onClick={() => post('/api/factions/create', { 
                   name: (document.getElementById('facName') as HTMLInputElement).value,
@@ -224,22 +224,22 @@ export default function InteractionConsole() {
       </div>
       
       {/* Output */}
-      <div className="border border-green-900 p-3 bg-black">
-        <h3 className="text-green-700 text-xs mb-2">SYSTEM_OUTPUT</h3>
-        {loading && <div className="animate-pulse text-green-500">PROCESSING...</div>}
+      <div className="border border-cyan-900 p-3 bg-black">
+        <h3 className="text-cyan-700 text-xs mb-2">SYSTEM_OUTPUT</h3>
+        {loading && <div className="animate-pulse text-cyan-500">PROCESSING...</div>}
         {!loading && output && (
-          <div className="text-xs text-green-400 whitespace-pre-wrap overflow-x-auto">
+          <div className="text-xs text-cyan-400 whitespace-pre-wrap overflow-x-auto">
             <div className="mb-2">STATUS: {output.status === 200 ? 'SUCCESS' : 'FAILURE'}</div>
             {output.json?.targetReaction && (
-              <div className="border-l-2 border-green-500 pl-2 mb-2">
-                <div className="text-green-700">TARGET_REACTION:</div>
-                <div className="text-green-300 italic">&quot;{output.json.targetReaction}&quot;</div>
+              <div className="border-l-2 border-cyan-500 pl-2 mb-2">
+                <div className="text-cyan-700">TARGET_REACTION:</div>
+                <div className="text-cyan-300 italic">&quot;{output.json.targetReaction}&quot;</div>
               </div>
             )}
             <pre>{JSON.stringify(output.json, null, 2)}</pre>
           </div>
         )}
-        {!loading && !output && <div className="text-xs text-green-900">AWAITING_DATA...</div>}
+        {!loading && !output && <div className="text-xs text-cyan-900">AWAITING_DATA...</div>}
       </div>
     </div>
   );

@@ -68,6 +68,19 @@ export async function evaluateFactionTurn(factionId: string) {
           break;
         case 'RECRUIT':
           resourceChange = -15;
+          // Actually create a new NPC member
+          const newRecruitName = `${faction.name} Recruit ${Math.floor(Math.random() * 1000)}`;
+          await prisma.nPC.create({
+            data: {
+              name: newRecruitName,
+              faction: faction.name,
+              factionId: faction.id,
+              alignment: 'Loyal',
+              status: 'ALIVE',
+              health: 100
+            }
+          });
+          log += ` Recruited ${newRecruitName}.`;
           break;
       }
 

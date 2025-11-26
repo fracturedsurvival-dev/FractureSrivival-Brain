@@ -1,4 +1,5 @@
 import prisma from '@/lib/db';
+import { NPCStatus } from '@prisma/client';
 
 export async function applyEventEffects(event: { id: string, type: string, title: string }) {
   let log = `Event Effect: ${event.title}`;
@@ -6,7 +7,7 @@ export async function applyEventEffects(event: { id: string, type: string, title
   switch (event.type) {
     case 'WEATHER':
       // Acid Rain / Storms: Damage random NPCs
-      const victims = await prisma.nPC.findMany({ take: 3, where: { status: 'ALIVE' } }); // Random-ish
+      const victims = await prisma.nPC.findMany({ take: 3, where: { status: NPCStatus.ALIVE } }); // Random-ish
       for (const npc of victims) {
         const dmg = Math.floor(Math.random() * 10) + 1;
         await prisma.nPC.update({
@@ -19,20 +20,40 @@ export async function applyEventEffects(event: { id: string, type: string, title
       
     case 'RESOURCE':
       // Supply Drop: Heal random NPCs
-      const lucky = await prisma.nPC.findMany({ take: 3, where: { status: 'ALIVE' } });
+      const lucky = await prisma.nPC.findMany({ take: 3, where: { status: NPCStatus.ALIVE } });
       for (const npc of lucky) {
+        const newHealth = Math.min(100, npc.health + 10);
         await prisma.nPC.update({
           where: { id: npc.id },
-          data: { health: { increment: 10 } } // Cap at 100 logic needed? Prisma doesn't cap automatically.
+          data: { health: newHealth }
         });
       }
       log += ` -> Healed ${lucky.length} survivors.`;
       break;
 
+    case 'INVASION':
+      // Raiders attack: Heavy damage to random NPCs
+      const targets = await prisma.nPC.findMany({ take: 5, where: { status: NPCStatus.ALIVE } });
+      for (const npc of targets) {
+        const dmg = Math.floor(Math.random() * 25) + 5;
+        await prisma.nPC.update({
+          where: { id: npc.id },
+          data: { health: { decrement: dmg } }
+        });
+      }
+      log += ` -> Raiders injured ${targets.length} survivors.`;
+      break;
+
     case 'POLITICAL':
-      // Tensions rise: Reduce trust globally?
-      // For now, just log it.
-      log += ` -> Faction tensions rising.`;
+      // Tensions rise: Reduce trust globally
+      const pairs = await prisma.trustState.findMany({ take: 5 });
+      for (const pair of pairs) {
+        await prisma.trustState.update({
+          where: { id: pair.id },
+          data: { trustLevel: { decrement: 10 } }
+        });
+      }
+      log += ` -> Trust eroded between ${pairs.length} pairs.`;
       break;
   }
   return log;

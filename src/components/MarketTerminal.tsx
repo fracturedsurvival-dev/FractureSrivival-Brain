@@ -1,74 +1,109 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-interface MarketItem {
-  name: string;
-  cost: number;
-  benefit: string;
+interface MarketListing {
+  id: string;
+  item: {
+    name: string;
+    type: string;
+    description: string;
+    value: number;
+  };
+  price: number;
+  quantity: number;
+  seller: {
+    name: string;
+  };
 }
 
-const MARKET_ITEMS: MarketItem[] = [
-  { name: "Ration Pack", cost: 15, benefit: "Survival" },
-  { name: "Data Cache", cost: 50, benefit: "Intel" },
-  { name: "Weapon Parts", cost: 100, benefit: "Defense" },
-  { name: "Bribe", cost: 30, benefit: "Influence" }
-];
-
 export default function MarketTerminal({ selectedNpcId }: { selectedNpcId: string | null }) {
-  const [lastAction, setLastAction] = useState<string | null>(null);
+  const [listings, setListings] = useState<MarketListing[]>([]);
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
-  const evaluateMarket = async () => {
-    if (!selectedNpcId) return;
+  const fetchListings = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/economy/market', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ npcId: selectedNpcId })
-      });
+      const res = await fetch('/api/economy/market');
       const data = await res.json();
-      setLastAction(JSON.stringify(data, null, 2));
+      if (data.success) {
+        setListings(data.data);
+      }
     } catch {
-      setLastAction("Error connecting to market.");
+      setMessage("ERROR: CONNECTION_LOST");
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchListings();
+  }, []);
+
+  const buyItem = async (listingId: string, price: number) => {
+    if (!selectedNpcId) return;
+    setMessage("PROCESSING_TRANSACTION...");
+    try {
+      const res = await fetch('/api/economy/market/buy', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-user-id': 'user_123' // Mock user ID for now, ideally from auth context
+        },
+        body: JSON.stringify({ listingId, quantity: 1 })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessage(`ACQUIRED: ITEM_ID [${listingId.slice(-4)}]`);
+        fetchListings(); // Refresh
+      } else {
+        setMessage(`ERROR: ${data.error}`);
+      }
+    } catch {
+      setMessage("TRANSACTION_FAILED");
+    }
+  };
+
   return (
-    <div className="border border-green-900/50 bg-black/90 p-4 font-mono text-green-500 shadow-[0_0_10px_rgba(0,255,0,0.1)]">
-      <h2 className="mb-4 text-xl font-bold tracking-wider text-green-400 border-b border-green-900 pb-2">
-        [ BLACK_MARKET_ACCESS ]
-      </h2>
+    <div className="border border-cyan-900/50 bg-black/90 p-4 font-mono text-cyan-500 shadow-[0_0_10px_rgba(0,240,255,0.1)]">
+      <div className="flex justify-between items-center mb-4 border-b border-cyan-900 pb-2">
+        <h2 className="text-xl font-bold tracking-wider text-cyan-400">
+          [ BLACK_MARKET_NET ]
+        </h2>
+        <button onClick={fetchListings} className="text-xs hover:text-cyan-300">[REFRESH]</button>
+      </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="space-y-2">
-          <h3 className="text-xs text-green-600 uppercase">Available Contracts</h3>
-          <ul className="space-y-1 text-sm">
-            {MARKET_ITEMS.map((item) => (
-              <li key={item.name} className="flex justify-between border-b border-green-900/30 pb-1">
-                <span>{item.name}</span>
-                <span className="text-green-300">{item.cost} CR</span>
-              </li>
-            ))}
-          </ul>
+      {message && (
+        <div className="mb-4 p-2 bg-cyan-900/20 border border-cyan-800 text-xs text-cyan-300">
+          {`> ${message}`}
         </div>
+      )}
 
-        <div className="space-y-2">
-          <h3 className="text-xs text-green-600 uppercase">AI Trader</h3>
-          <div className="h-24 bg-black border border-green-900 p-2 text-xs overflow-auto whitespace-pre-wrap">
-            {loading ? "ANALYZING_MARKET_CONDITIONS..." : lastAction || "WAITING_FOR_INPUT..."}
-          </div>
-          <button
-            onClick={evaluateMarket}
-            disabled={!selectedNpcId || loading}
-            className="w-full bg-green-900/20 hover:bg-green-900/40 text-green-400 border border-green-700 px-3 py-2 text-xs uppercase tracking-widest transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? "NEGOTIATING..." : "EVALUATE PURCHASE"}
-          </button>
-        </div>
+      <div className="space-y-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+        {listings.length === 0 ? (
+          <div className="text-center text-cyan-800 py-4">NO_ACTIVE_LISTINGS</div>
+        ) : (
+          listings.map((listing) => (
+            <div key={listing.id} className="flex justify-between items-center border border-cyan-900/30 p-2 hover:bg-cyan-900/10 transition-colors">
+              <div>
+                <div className="font-bold text-cyan-400">{listing.item.name}</div>
+                <div className="text-xs text-cyan-600">{listing.item.type} | Seller: {listing.seller.name}</div>
+                <div className="text-xs text-cyan-700 italic">{listing.item.description}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-lg text-cyan-300">{listing.price} CR</div>
+                <button
+                  onClick={() => buyItem(listing.id, listing.price)}
+                  disabled={!selectedNpcId || loading}
+                  className="mt-1 text-xs bg-cyan-900/30 hover:bg-cyan-900/60 px-2 py-1 rounded border border-cyan-800 disabled:opacity-30"
+                >
+                  [BUY]
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

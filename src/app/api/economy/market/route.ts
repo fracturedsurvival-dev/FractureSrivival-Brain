@@ -1,54 +1,74 @@
-import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import { decideEconomicAction } from '@/lib/services/brainAgent';
+import { z } from 'zod';
+import { handleApiError, successResponse, errorResponse } from '@/lib/api';
+
+export async function GET() {
+  try {
+    const listings = await prisma.marketListing.findMany({
+      where: { active: true },
+      include: { item: true, seller: { select: { name: true } } }
+    });
+    return successResponse(listings);
+  } catch (e) {
+    return handleApiError(e);
+  }
+}
+
+const createListingSchema = z.object({
+  itemId: z.string().cuid(),
+  quantity: z.number().min(1),
+  price: z.number().min(0),
+  npcId: z.string().optional()
+});
 
 export async function POST(req: Request) {
   try {
-    const { npcId } = await req.json();
+    const userId = req.headers.get('x-user-id');
     
-    if (!npcId) {
-      return NextResponse.json({ error: 'NPC_ID_REQUIRED' }, { status: 400 });
+    const body = await req.json();
+    const { itemId, quantity, price, npcId } = createListingSchema.parse(body);
+
+    let npc;
+    if (npcId) {
+        npc = await prisma.nPC.findUnique({ where: { id: npcId } });
+    } else if (userId) {
+        npc = await prisma.nPC.findFirst({ where: { userId } });
     }
 
-    const decision = await decideEconomicAction(npcId);
+    if (!npc) return errorResponse('NPC_NOT_FOUND', 404);
 
-    if (decision.action === 'BUY' && decision.item && decision.cost) {
-      // Execute Transaction
-      const npc = await prisma.nPC.findUnique({ 
-        where: { id: npcId },
-        include: { wallet: true }
-      });
+    // Check inventory
+    const inventoryItem = await prisma.inventoryItem.findUnique({
+      where: { npcId_itemId: { npcId: npc.id, itemId } }
+    });
 
-      if (npc && npc.wallet) {
-        await prisma.$transaction([
-          prisma.wallet.update({
-            where: { id: npc.wallet.id },
-            data: { balance: { decrement: decision.cost } }
-          }),
-          prisma.transaction.create({
-            data: {
-              hash: 'market_' + Math.random().toString(36).substr(2, 9),
-              from: npc.wallet.address,
-              to: 'SYSTEM_MARKET',
-              amount: decision.cost
-            }
-          }),
-          // Log the purchase as a memory
-          prisma.memoryEvent.create({
-            data: {
-              npcId,
-              rawContent: `Purchased ${decision.item} for ${decision.cost} credits.`,
-              summary: `Bought ${decision.item}`,
-              importance: 3,
-              tags: 'economy,purchase'
-            }
-          })
-        ]);
+    if (!inventoryItem || inventoryItem.quantity < quantity) {
+      return errorResponse('INSUFFICIENT_ITEMS', 400);
+    }
+
+    // Transaction: Reduce inventory -> Create listing
+    const listing = await prisma.$transaction(async (tx) => {
+      if (inventoryItem.quantity === quantity) {
+        await tx.inventoryItem.delete({ where: { id: inventoryItem.id } });
+      } else {
+        await tx.inventoryItem.update({
+          where: { id: inventoryItem.id },
+          data: { quantity: { decrement: quantity } }
+        });
       }
-    }
 
-    return NextResponse.json(decision);
+      return await tx.marketListing.create({
+        data: {
+          sellerId: npc.id,
+          itemId,
+          quantity,
+          price
+        }
+      });
+    });
+
+    return successResponse(listing);
   } catch (e) {
-    return NextResponse.json({ error: 'SERVER_ERROR', message: (e as Error).message }, { status: 500 });
+    return handleApiError(e);
   }
 }

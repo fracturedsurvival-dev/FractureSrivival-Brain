@@ -1,15 +1,24 @@
-import { NextResponse } from 'next/server';
 import { simulateInteraction } from '@/lib/services/brainAgent';
+import { z } from 'zod';
+import { handleApiError, successResponse } from '@/lib/api';
+
+const interactSchema = z.object({
+  sourceId: z.string().cuid(),
+  targetId: z.string().cuid(),
+  content: z.string().min(1).max(1000),
+  eventType: z.string().default('CHAT'),
+  model: z.string().optional()
+});
 
 export async function POST(req: Request) {
   try {
-    const { sourceId, targetId, content, eventType, model } = await req.json();
-    if (!sourceId || !targetId || !content || !eventType) {
-      return NextResponse.json({ error: 'INVALID_INPUT' }, { status: 400 });
-    }
+    const body = await req.json();
+    const validation = interactSchema.parse(body); // Use parse to throw ZodError automatically
+
+    const { sourceId, targetId, content, eventType, model } = validation;
     const result = await simulateInteraction(sourceId, targetId, content, eventType, model);
-    return NextResponse.json(result, { status: 200 });
+    return successResponse(result);
   } catch (e) {
-    return NextResponse.json({ error: 'SERVER_ERROR', message: (e as Error).message }, { status: 500 });
+    return handleApiError(e);
   }
 }

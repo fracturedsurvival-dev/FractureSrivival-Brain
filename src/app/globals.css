@@ -1,27 +1,30 @@
 @import "tailwindcss";
 
 :root {
-  --background: #050505;
-  --foreground: #00ff41;
-  --terminal-dim: #003b00;
-  --terminal-bright: #ccffcc;
-  --scanline-color: rgba(0, 255, 65, 0.04);
+  --background: #020408;
+  --foreground: #00f0ff;
+  --terminal-dim: #001a33;
+  --terminal-bright: #ccf6ff;
+  --scanline-color: rgba(0, 240, 255, 0.03);
+  --accent-primary: #00f0ff;
+  --accent-secondary: #0066ff;
+  --accent-alert: #ff003c;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "Courier New", Courier, monospace;
-  --font-mono: "Courier New", Courier, monospace;
+  --font-sans: "Segoe UI", "Roboto", "Helvetica Neue", sans-serif;
+  --font-mono: "Consolas", "Monaco", "Courier New", monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: "Courier New", Courier, monospace;
+  font-family: var(--font-sans);
   overflow-x: hidden;
   min-height: 100vh;
-  text-shadow: 0 0 2px var(--terminal-dim);
+  text-shadow: 0 0 2px rgba(0, 240, 255, 0.3);
 }
 
 /* CRT Scanline Effect */
@@ -36,7 +39,7 @@ body {
     var(--scanline-color) 50%,
     rgba(0, 0, 0, 0) 50%
   );
-  background-size: 100% 4px;
+  background-size: 100% 3px;
   pointer-events: none;
   z-index: 9999;
   animation: scanline-scroll 0.5s linear infinite;
@@ -45,44 +48,81 @@ body {
 /* CRT Flicker */
 .crt-flicker {
   animation: flicker 0.15s infinite;
-  opacity: 0.95;
+  opacity: 0.98;
 }
 
 @keyframes scanline-scroll {
   0% { background-position: 0 0; }
-  100% { background-position: 0 4px; }
+  100% { background-position: 0 3px; }
 }
 
 @keyframes flicker {
-  0% { opacity: 0.97; }
+  0% { opacity: 0.99; }
   50% { opacity: 1; }
-  100% { opacity: 0.98; }
+  100% { opacity: 0.99; }
 }
 
 /* Glitch Utilities */
 .text-glow {
-  text-shadow: 0 0 5px var(--foreground);
+  text-shadow: 0 0 8px var(--accent-primary);
 }
 
 .border-terminal {
-  border: 1px solid var(--foreground);
-  box-shadow: 0 0 5px var(--terminal-dim);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.1);
+  background: rgba(2, 4, 8, 0.8);
+  backdrop-filter: blur(4px);
+  border-radius: 4px;
 }
 
 .bg-terminal-dim {
-  background-color: rgba(0, 59, 0, 0.2);
+  background-color: rgba(0, 26, 51, 0.4);
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #000;
+  background: #020408;
+  border-left: 1px solid #001a33;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--terminal-dim);
+  background: #003366;
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--foreground);
+  background: #0066ff;
+  box-shadow: 0 0 8px #00f0ff;
 }
+
+/* Animations */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-in {
+  animation: fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #003366 #020408;
+}
+
+/* Utility Classes for Theme */
+.text-cyan-glow {
+  color: var(--accent-primary);
+  text-shadow: 0 0 5px rgba(0, 240, 255, 0.5);
+}
+
+.border-cyan-dim {
+  border-color: rgba(0, 240, 255, 0.2);
+}
+
+.bg-cyan-dim {
+  background-color: rgba(0, 240, 255, 0.05);
+}
+

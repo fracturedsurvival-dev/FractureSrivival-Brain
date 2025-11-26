@@ -1,0 +1,5 @@
+-- CreateEnum
+CREATE TYPE "JobType" AS ENUM ('SCAVENGER', 'TRADER', 'MERCENARY', 'MEDIC');
+
+-- AlterTable
+ALTER TABLE "NPC" ADD COLUMN     "job" "JobType" NOT NULL DEFAULT 'SCAVENGER';

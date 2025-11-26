@@ -32,13 +32,41 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+// Enums
+enum Role {
+  USER
+  ADMIN
+}
+
+enum NPCStatus {
+  ALIVE
+  INJURED
+  DEAD
+}
+
+enum MissionStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  COMPLETED
+  FAILED
+}
+
+enum JobType {
+  SCAVENGER
+  TRADER
+  MERCENARY
+  MEDIC
+}
+
 model NPC {
   id        String        @id @default(cuid())
   name      String        @unique
   faction   String?
   alignment String?
   health    Int           @default(100)
-  status    String        @default("ALIVE") // ALIVE, INJURED, DEAD
+  status    NPCStatus     @default(ALIVE)
+  job       JobType       @default(SCAVENGER)
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
   memories  MemoryEvent[]
@@ -56,7 +84,7 @@ model NPC {
 
   // User Integration
   userId    String?  @unique
-  user      User?    @relation(fields: [userId], references: [id])
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // AI / Growth Fields
   skills    Json?    @default("{}")
@@ -65,12 +93,90 @@ model NPC {
   // Task System
   currentAction    String?
   actionExpiresAt  DateTime?
+
+  // Mission System
+  givenMissions    Mission[] @relation("MissionGiver")
+  receivedMissions Mission[] @relation("MissionReceiver")
+
+  // Inventory
+  inventory        InventoryItem[]
+  marketListings   MarketListing[]
+
+  @@index([factionId])
+  @@index([userId])
+}
+
+model Item {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String
+  type        String   // WEAPON, ARMOR, CONSUMABLE, RESOURCE
+  value       Float    @default(10.0)
+  stats       Json?    // { damage: 10, defense: 5, heal: 20 }
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  inventoryItems InventoryItem[]
+  marketListings MarketListing[]
+  recipeOutputs  Recipe[]
+  recipeInputs   RecipeIngredient[]
+}
+
+model InventoryItem {
+  id        String   @id @default(cuid())
+  npcId     String
+  itemId    String
+  quantity  Int      @default(1)
+  equipped  Boolean  @default(false)
+  
+  npc       NPC      @relation(fields: [npcId], references: [id], onDelete: Cascade)
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([npcId, itemId])
+}
+
+model MarketListing {
+  id        String   @id @default(cuid())
+  sellerId  String
+  itemId    String
+  quantity  Int      @default(1)
+  price     Float
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  // Seller could be an NPC or a Faction (future), for now just link to Wallet address or NPC ID?
+  // Let's link to NPC for simplicity
+  seller    NPC      @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@index([active])
+}
+
+model Mission {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  giverId     String
+  giver       NPC      @relation("MissionGiver", fields: [giverId], references: [id], onDelete: Cascade)
+  receiverId  String
+  receiver    NPC      @relation("MissionReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  status      MissionStatus   @default(PENDING)
+  rewards     Json?    // e.g. { credits: 100, item: "Medkit" }
+  startedAt   DateTime?
+  duration    Int      @default(60) // Duration in seconds
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([giverId])
+  @@index([receiverId])
+  @@index([status])
 }
 
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
   password  String
+  role      Role     @default(USER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   npc       NPC?
@@ -81,7 +187,7 @@ model Wallet {
   address   String   @unique
   balance   Float    @default(100.0)
   ownerId   String?  @unique
-  owner     NPC?     @relation(fields: [ownerId], references: [id])
+  owner     NPC?     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -120,33 +226,63 @@ model TrustState {
   id         String   @id @default(cuid())
   sourceId   String
   targetId   String
-  source     NPC      @relation("sourceRefs", fields: [sourceId], references: [id])
-  target     NPC      @relation("targetRefs", fields: [targetId], references: [id])
+  source     NPC      @relation("sourceRefs", fields: [sourceId], references: [id], onDelete: Cascade)
+  target     NPC      @relation("targetRefs", fields: [targetId], references: [id], onDelete: Cascade)
   trustLevel Int      @default(0)
   updatedAt  DateTime @updatedAt
 
   @@unique([sourceId, targetId])
+  @@index([sourceId])
+  @@index([targetId])
 }
 
 model MemoryEvent {
   id        String   @id @default(cuid())
   npcId     String
-  npc       NPC      @relation(fields: [npcId], references: [id])
+  npc       NPC      @relation(fields: [npcId], references: [id], onDelete: Cascade)
   rawContent String
   summary   String?
   importance Int      @default(1)
   tags      String?
   createdAt DateTime @default(now())
+
+  @@index([npcId])
+  @@index([createdAt])
 }
 
 model TrustEvent {
   id           String   @id @default(cuid())
   sourceId     String
   targetId     String
-  source       NPC      @relation("trustSourceEvents", fields: [sourceId], references: [id])
-  target       NPC      @relation("trustTargetEvents", fields: [targetId], references: [id])
+  source       NPC      @relation("trustSourceEvents", fields: [sourceId], references: [id], onDelete: Cascade)
+  target       NPC      @relation("trustTargetEvents", fields: [targetId], references: [id], onDelete: Cascade)
   delta        Int
   resultingTrust Int
   eventType    String?
   createdAt    DateTime @default(now())
+
+  @@index([sourceId])
+  @@index([targetId])
+  @@index([createdAt])
+}
+
+model Recipe {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  outputItemId String
+  outputItem   Item     @relation(fields: [outputItemId], references: [id])
+  outputQuantity Int    @default(1)
+  ingredients RecipeIngredient[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model RecipeIngredient {
+  id        String   @id @default(cuid())
+  recipeId  String
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id])
+  quantity  Int
 }

@@ -2,23 +2,31 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { hashPassword, generateToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
+import { z } from 'zod';
+import { handleApiError, successResponse, errorResponse } from '@/lib/api';
+
+const signupSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+  characterName: z.string().min(2).max(30),
+  faction: z.string().optional()
+});
 
 export async function POST(req: Request) {
   try {
-    const { email, password, characterName, faction } = await req.json();
+    const body = await req.json();
+    const validation = signupSchema.parse(body);
 
-    if (!email || !password || !characterName) {
-      return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
-    }
+    const { email, password, characterName, faction } = validation;
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      return NextResponse.json({ error: 'User already exists' }, { status: 400 });
+      return errorResponse('User already exists', 400);
     }
 
     const existingNPC = await prisma.nPC.findUnique({ where: { name: characterName } });
     if (existingNPC) {
-      return NextResponse.json({ error: 'Character name taken' }, { status: 400 });
+      return errorResponse('Character name taken', 400);
     }
 
     const hashedPassword = await hashPassword(password);
@@ -59,9 +67,9 @@ export async function POST(req: Request) {
     const token = generateToken(result.user.id);
     (await cookies()).set('auth_token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
 
-    return NextResponse.json({ success: true, user: { id: result.user.id, email: result.user.email }, npc: result.npc });
+    return successResponse({ user: { id: result.user.id, email: result.user.email }, npc: result.npc });
 
   } catch (e) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    return handleApiError(e);
   }
 }

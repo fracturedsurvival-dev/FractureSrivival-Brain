@@ -1,13 +1,17 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { z } from 'zod';
+import { handleApiError, successResponse } from '@/lib/api';
+
+const createNpcSchema = z.object({
+  name: z.string().min(2).max(50),
+  faction: z.string().optional(),
+  alignment: z.string().optional()
+});
 
 export async function POST(req: Request) {
   try {
-    const { name, faction, alignment } = await req.json();
-    
-    if (!name) {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
-    }
+    const body = await req.json();
+    const { name, faction, alignment } = createNpcSchema.parse(body);
 
     const npc = await prisma.nPC.create({
       data: {
@@ -17,8 +21,8 @@ export async function POST(req: Request) {
       }
     });
 
-    return NextResponse.json(npc);
+    return successResponse(npc);
   } catch (e) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    return handleApiError(e);
   }
 }
